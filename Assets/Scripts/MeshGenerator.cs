@@ -6,9 +6,8 @@ public class MeshGenerator : MonoBehaviour
 {
     //Serialized vars
     [SerializeField] int height, width;
-    [SerializeField] float altitudeIncreament;
-    [SerializeField] int numOfPasses;
-
+    [SerializeField] float pnAmplititude;
+    [SerializeField] Vector2 pnScale;
 
     Mesh mesh;
 
@@ -22,12 +21,14 @@ public class MeshGenerator : MonoBehaviour
         vertices = new List<Vector3>();
         triangles = new List<int>();
 
+        
         CreateMesh();
-        for(int i = 0; i < numOfPasses; i++)
         Terrainize();
         UpdateMesh();
     }
 
+
+    //creates a plane
     void CreateMesh()
     {
         // add vertices
@@ -76,51 +77,15 @@ public class MeshGenerator : MonoBehaviour
         else return true;
     }
 
-    float findAverageAltitudeOfSurrounding(int x, int z)
-    {
-        float avg = 0f;
-        int i_currentVertex = IndexOfVertex(x, z);
-
-        List<float> altitudes = new List<float>();
-        
-        // height of current point
-        altitudes.Add(vertices[i_currentVertex].y);
-
-        // top top-right right bottom-right bottom bottom-left left top-left
-        if (isInBounds(x, z + 1)) altitudes.Add(vertices[IndexOfVertex(x, z + 1)].y);
-        if (isInBounds(x + 1, z + 1)) altitudes.Add(vertices[IndexOfVertex(x + 1, z + 1)].y);
-        if (isInBounds(x + 1, z)) altitudes.Add(vertices[IndexOfVertex(x + 1, z)].y);
-        if (isInBounds(x + 1, z - 1)) altitudes.Add(vertices[IndexOfVertex(x + 1, z - 1)].y);
-        if (isInBounds(x, z - 1)) altitudes.Add(vertices[IndexOfVertex(x, z - 1)].y);
-        if (isInBounds(x - 1, z - 1)) altitudes.Add(vertices[IndexOfVertex(x - 1, z - 1)].y);
-        if (isInBounds(x - 1, z)) altitudes.Add(vertices[IndexOfVertex(x - 1, z)].y);
-        if (isInBounds(x - 1, z + 1)) altitudes.Add(vertices[IndexOfVertex(x - 1, z + 1)].y);
-
-        foreach (float altitude in altitudes)
-            avg += altitude;
-
-        avg /= altitudes.Count;
-
-        return avg;
-    }
-
     void Terrainize()
     {
-        System.Random random = new System.Random();
         for(int z = 0; z < height; z++)
         {
             for(int x = 0; x < width; x++)
             {
-                float avgAlti = findAverageAltitudeOfSurrounding(x, z);
-
-                int rng = random.Next(0, 2);
-
-                Vector3 vertex = vertices[IndexOfVertex(x, z)];
-
-                if (rng == 0) vertex.y = avgAlti - altitudeIncreament;
-                else vertex.y = avgAlti + altitudeIncreament;
-
-                vertices[IndexOfVertex(x, z)] = vertex;
+                int index = IndexOfVertex(x, z);
+                float y = Mathf.PerlinNoise(x * pnScale.x, z * pnScale.y) * pnAmplititude;
+                vertices[index] = new Vector3(vertices[index].x, y, vertices[index].z);
             }
         }
     }
